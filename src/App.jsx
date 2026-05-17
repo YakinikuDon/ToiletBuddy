@@ -69,7 +69,7 @@ function App() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* 上方：拉屎与金币动效区 */}
       <div style={{ height: '35vh', backgroundColor: '#1a1a1a', position: 'relative', borderBottom: '2px solid #333' }}>
-        <CoinAnimation />
+        <CoinAnimation startTime={startTime} salary={salary} salaryType={salaryType} />
       </div>
       
       {/* 中间：跳动的数字 */}
@@ -99,8 +99,16 @@ function App() {
     const percentage = getPercentage(earned, durationMs, salary, salaryType);
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px', overflowY: 'auto' }}>
         <h2 style={{ fontSize: '32px', marginBottom: '10px', color: '#ffffff' }}>结算报告 🧾</h2>
+        
+        {/* 点赞粑粑图片与夸奖文本 */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+          <img src={`${import.meta.env.BASE_URL}poop_thumbs_up.png`} alt="Poop thumbs up" style={{ width: '120px', height: '120px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+          <p style={{ color: '#FFD700', fontSize: '16px', fontWeight: 'bold', margin: '10px 0 0 0', textAlign: 'center', padding: '0 20px' }}>
+            拉得真舒畅！这坨带薪便便为您完美的摸鱼姿势点赞！👍
+          </p>
+        </div>
         
         <div style={{ backgroundColor: '#1a1a1a', padding: '30px', borderRadius: '15px', width: '90%', marginBottom: '30px' }}>
           <p style={{ color: '#eeeeee', margin: '0 0 10px 0', fontSize: '18px' }}>本次拉屎时长：</p>
