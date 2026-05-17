@@ -41,7 +41,7 @@ const database = [
     title: "2026年全球科技：脑机接口与AI助理的融合",
     category: "前沿科技",
     summary: "随着最新一代混合计算模型与微型脑机接口的突破，人类迎来了真正的‘心念交互’时代。智能助理将直接理解你的潜意识思维...",
-    content: "随着 2026 年最新一代低功耗脑机接口（BCI）与多模态AI混合模型的重大技术突破，科技界迎来了一场交互革命——“心念交互时代”已经悄然拉开序幕。\n\n最新的脑机设备不再需要侵入式手术，而是通过轻量级的耳戴式或贴片传感器，以高达 98% 的准确率解码运动皮层的电信号。这意味着用户无需开口，也无需动手指，只需要在脑海中产生特定意图（如“滑过这页”、“搜索关于痔疮的健康指南”），AI 助理即可实时做出反应。\n\n此外，具身智能助理能够根据你的心率、体温以及专注度，实时调整工作环境。当你坐在马桶上完全放松时，它会自动帮你过滤掉所有来自老板和客户的紧急邮件，只给你推送你最感兴趣的新闻和小说节选。\n\n当然，这项技术的普及也引发了空前的信息隐私探讨。如何在享受“心念交互”的便利的同时，防止科技巨头连我们‘上厕所时的胡思乱想’都一并抓取？这或许是未来五年人类面临的最大伦理挑战。"
+    content: "随着 2026 年最新一代低功耗脑机接口（BCI）与多模态AI混合模型的重大技术突破，科技界迎来了一场交互革命——“心念交互时代”已经悄然拉开序幕。\n\n最新的脑机设备不再需要侵入式手术，而是通过轻量级的耳戴式或贴片传感器，以高达 98% 的准确率解码运动皮层的电信号。这意味着用户无需开口，也无需动手指，只需要在脑海中产生特定意图（如“滑过这页”、“搜索关于痔疮的健康指南”），AI 助理即可实时做出反应。\n\n此外，具身智能助理能够根据你的心率、体温以及专注度，实时调整工作环境。当你坐在马桶上完全放松时，它会自动帮你过滤掉所有来自老板 and 客户的紧急邮件，只给你推送你最感兴趣的新闻和小说节选。\n\n当然，这项技术的普及也引发了空前的信息隐私探讨。如何在享受“心念交互”的便利的同时，防止科技巨头连我们‘上厕所时的胡思乱想’都一并抓取？这或许是未来五年人类面临的最大伦理挑战。"
   },
   {
     id: 7,
@@ -59,29 +59,80 @@ const database = [
   }
 ];
 
+const stripHtml = (html) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || "";
+};
+
 export const ReadingList = () => {
+  const [articlesPool, setArticlesPool] = useState(database);
   const [visibleItems, setVisibleItems] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
 
   // 随机获取 3 篇不重复的文章
-  const refreshArticles = () => {
-    const shuffled = [...database].sort(() => 0.5 - Math.random());
+  const refreshArticles = (customPool = articlesPool) => {
+    const shuffled = [...customPool].sort(() => 0.5 - Math.random());
     setVisibleItems(shuffled.slice(0, 3));
   };
 
-  // 初始加载
+  // 1. 获取动态科技/AI新闻并混入池子
   useEffect(() => {
-    refreshArticles();
+    const fetchDynamicNews = async () => {
+      setIsLoadingNews(true);
+      try {
+        // 使用免费的 rss2json 转换 ITHome 的 RSS 科技资讯
+        const response = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.ithome.com/rss/");
+        const data = await response.json();
+        
+        if (data.status === 'ok' && data.items && data.items.length > 0) {
+          const dynamicArticles = data.items.map((item, index) => {
+            const cleanSummary = stripHtml(item.description || item.content).substring(0, 100).trim() + "...";
+            const cleanContent = stripHtml(item.content || item.description).trim();
+            const isAI = item.title.toLowerCase().includes('ai') || 
+                          item.title.includes('人工智能') || 
+                          item.title.toLowerCase().includes('gpt') ||
+                          item.title.toLowerCase().includes('claude');
+            
+            return {
+              id: `dynamic-${index}`,
+              title: item.title,
+              category: isAI ? "🔥 前沿AI" : "⚡ 最新科技",
+              summary: cleanSummary,
+              content: cleanContent
+            };
+          });
+
+          // 将动态抓取的最新新闻和静态的经典哲学散文融为一体！
+          setArticlesPool(prev => [...dynamicArticles, ...prev]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dynamic tech news:", err);
+      } finally {
+        setIsLoadingNews(false);
+      }
+    };
+    fetchDynamicNews();
   }, []);
+
+  // 2. 当池子更新时，自动重组可见文章
+  useEffect(() => {
+    refreshArticles(articlesPool);
+  }, [articlesPool]);
 
   return (
     <div style={{ textAlign: 'left', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>
-        <h3 style={{ color: '#ffffff', margin: 0 }}>
+        <h3 style={{ color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           打发时间读物推荐 📖
+          {isLoadingNews && (
+            <span style={{ fontSize: '11px', color: '#888', fontWeight: 'normal', animation: 'pulse 1.5s infinite' }}>
+              (正在同步最新AI科技资讯...)
+            </span>
+          )}
         </h3>
         <button 
-          onClick={refreshArticles}
+          onClick={() => refreshArticles(articlesPool)}
           style={{ 
             fontSize: '12px', 
             padding: '4px 10px', 
@@ -101,40 +152,50 @@ export const ReadingList = () => {
       </div>
 
       <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
-        {visibleItems.map((item) => (
-          <li 
-            key={item.id} 
-            onClick={() => setSelectedArticle(item)}
-            style={{ 
-              marginBottom: '15px', 
-              backgroundColor: '#222', 
-              padding: '15px', 
-              borderRadius: '12px', 
-              cursor: 'pointer',
-              border: '1px solid #333',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = '#2a2a2a';
-              e.currentTarget.style.borderColor = '#4CAF50';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#222';
-              e.currentTarget.style.borderColor = '#333';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '11px', color: '#4CAF50', backgroundColor: 'rgba(76, 175, 80, 0.1)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                {item.category}
-              </span>
-              <span style={{ fontSize: '11px', color: '#888' }}>点击阅读全文 ➔</span>
-            </div>
-            <h4 style={{ color: '#ffffff', margin: '0 0 8px 0', fontSize: '16px' }}>{item.title}</h4>
-            <p style={{ color: '#bbbbbb', margin: 0, fontSize: '13px', lineHeight: '1.5' }}>
-              {item.summary}
-            </p>
-          </li>
-        ))}
+        {visibleItems.map((item) => {
+          const isDynamic = item.id.toString().startsWith('dynamic');
+          return (
+            <li 
+              key={item.id} 
+              onClick={() => setSelectedArticle(item)}
+              style={{ 
+                marginBottom: '15px', 
+                backgroundColor: isDynamic ? 'rgba(76, 175, 80, 0.05)' : '#222', 
+                padding: '15px', 
+                borderRadius: '12px', 
+                cursor: 'pointer',
+                border: isDynamic ? '1px dashed rgba(76, 175, 80, 0.3)' : '1px solid #333',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = isDynamic ? 'rgba(76, 175, 80, 0.1)' : '#2a2a2a';
+                e.currentTarget.style.borderColor = '#4CAF50';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = isDynamic ? 'rgba(76, 175, 80, 0.05)' : '#222';
+                e.currentTarget.style.borderColor = isDynamic ? 'rgba(76, 175, 80, 0.3)' : '#333';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ 
+                  fontSize: '11px', 
+                  color: isDynamic ? '#81C784' : '#4CAF50', 
+                  backgroundColor: isDynamic ? 'rgba(129, 199, 132, 0.15)' : 'rgba(76, 175, 80, 0.1)', 
+                  padding: '2px 8px', 
+                  borderRadius: '10px', 
+                  fontWeight: 'bold' 
+                }}>
+                  {item.category}
+                </span>
+                <span style={{ fontSize: '11px', color: '#888' }}>点击阅读全文 ➔</span>
+              </div>
+              <h4 style={{ color: '#ffffff', margin: '0 0 8px 0', fontSize: '16px' }}>{item.title}</h4>
+              <p style={{ color: '#bbbbbb', margin: 0, fontSize: '13px', lineHeight: '1.5' }}>
+                {item.summary}
+              </p>
+            </li>
+          );
+        })}
       </ul>
 
       {/* 详细文章阅读弹窗模态框 */}
@@ -239,6 +300,11 @@ export const ReadingList = () => {
         @keyframes slideUp {
           from { transform: translateY(100%); }
           to { transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0% { opacity: 0.5; }
+          50% { opacity: 1; }
+          100% { opacity: 0.5; }
         }
       `}</style>
     </div>
