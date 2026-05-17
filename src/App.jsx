@@ -144,9 +144,14 @@ function App() {
           🔄 再拉一泡
         </button>
 
-        <a href="https://space.bilibili.com" target="_blank" rel="noreferrer" style={{ color: '#FB7299', textDecoration: 'none', fontSize: '14px' }}>
-          👍 关注我的B站账号
-        </a>
+        <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+          <a href="https://space.bilibili.com" target="_blank" rel="noreferrer" style={{ color: '#FB7299', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+            👍 关注我的 B 站
+          </a>
+          <a href="https://github.com/YakinikuDon/ToiletBuddy" target="_blank" rel="noreferrer" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+            ⭐ 去 GitHub 给个 Star
+          </a>
+        </div>
       </div>
     )
   }
